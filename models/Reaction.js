@@ -14,25 +14,20 @@ const reactionSchema = new Schema(
         reactionBody: {
             type: String,
             required: true,
-            maxLength: 1000
+            maxLength: 280
         },
-        timestamp: {
+        createdAt: {
             type: Date,
-            default: Date.now
+            default: Date.now,
+            get: time => timeFormat(time)
         }
     },
     {
         toJSON: {
-            getters: true,
-            virtuals: true
+            getters: true
         },
         id: false
     }
 );
-
-reactionSchema.virtual('createdAt')
-.get(()=>{
-    return formatTime(this.timestamp);
-})
 
 module.exports = reactionSchema;
