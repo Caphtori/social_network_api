@@ -26,13 +26,34 @@ module.exports = {
         }
     },
 
-    async createleUser(req, res){
+    async createUser(req, res){
         try{
             const user = await User.create(req.body);
             res.json(user);
         } catch(err){
             res.status(500).json(err);
         }
+    },
+
+    async updateUser(req, re){
+        try{
+            const user = await User.findOneAndUpdate(
+                { _id: req.params.userId },
+                { $set: req.body },
+                { 
+                    runValidators: true,
+                    new: true
+                }
+            );
+            
+            if (!user){
+                return res.status(404).json({ message: 'User not found.' });
+            };
+            
+            res.json(user);
+        } catch(err) {
+            res.status(500).json(err);
+        };
     },
 
     async deleteUser(req, res){
@@ -68,7 +89,7 @@ module.exports = {
             };
 
             const user = await User.findOneAndUpdate(
-                { _id: req.body.userId },
+                { _id: req.params.userId },
                 { $addToSet: { friends: friend._id } },
                 { new: true }
             );
@@ -91,7 +112,7 @@ module.exports = {
             };
 
             const user = await User.findOneAndUpdate(
-                { _id: req.body.userId },
+                { _id: req.params.userId },
                 { $pull: { friends: friend._id } },
                 { new: true }
             );
