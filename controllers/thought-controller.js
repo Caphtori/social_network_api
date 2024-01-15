@@ -12,7 +12,7 @@ module.exports = {
 
     async getSingleThought(req, res){
         try{
-            const thought = await Thought.findOne({ _id:req.params.thoughtId });
+            const thought = await Thought.findOne({ _id: req.params.thoughtId });
             
             if (!thought){
                 return res.status(404).json({ message: 'Thought not found.' });
@@ -37,7 +37,7 @@ module.exports = {
                 return res.status(404).json({ message: 'Thought posted, but user not found.' });
             };
             
-            res.json('Thought posted successfully.');
+            res.json(thought);
         } catch(err) {
             res.status(500).json(err);
         }
@@ -81,7 +81,7 @@ module.exports = {
                 return res.status(404).json({ message: 'Thought deleted, but user not found.' });
             };
             
-            res.json('Thought deleted successfully.');
+            res.json({ message: 'Thought deleted successfully.' });
         } catch(err) {
             res.status(500).json(err);
         };
