@@ -4,9 +4,12 @@ module.exports = {
     async getThoughts(req, res){
         try{
             const thoughts = await Thought.find();
+            const testTimes = thoughts.map((thought)=>thought.createdAt)
+            console.log(testTimes)
             res.json(thoughts);
-        } catch(err) {
-            res.status(500).json
+        } catch(err){
+            console.log(err)
+            res.status(500).json(err);
         };
     },
 
@@ -43,7 +46,7 @@ module.exports = {
         }
     },
 
-    async updateThought(req, re){
+    async updateThought(req, res){
         try{
             const thought = await Thought.findOneAndUpdate(
                 { _id: req.params.thoughtId },

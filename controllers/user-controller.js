@@ -1,6 +1,4 @@
-const { reset } = require('nodemon');
 const { User, Thought } = require('../models');
-const { findOneAndDelete } = require('../models/User');
 
 
 module.exports = {
@@ -35,8 +33,14 @@ module.exports = {
         }
     },
 
-    async updateUser(req, re){
+    async updateUser(req, res){
         try{
+            // const initUser = await User.findOne({ _id: req.params.userId });
+            // if (!initUser){
+            //     return res.status(404).json({ message: 'User not found.' });
+            // }
+            // const originalUsername = initUser.username;
+
             const user = await User.findOneAndUpdate(
                 { _id: req.params.userId },
                 { $set: req.body },
@@ -49,9 +53,48 @@ module.exports = {
             if (!user){
                 return res.status(404).json({ message: 'User not found.' });
             };
-            
+
+            // if (req.body.username){
+            //     const updateThoughts = await Thought.updateMany(
+            //         { _id: { $in: user.posts } },
+            //         { $set: {username: req.body.username} },
+            //         { new: true }
+            //     );
+            //     const allThoughts = await Thought.find();
+            //     const userReactions = allThoughts.filter((thought)=>{
+            //         for (let i=0; i<thought.reactions.length; i++){
+            //             if (thought.reactions[i].username===user.username){
+            //                 return true;
+            //             };
+            //             return false
+            //         }
+            //     });
+    
+            //     userReactions.forEach(async(thought)=>{
+            //         const reactionUpdates = thought.reactions.filter((reaction)=>{
+            //             if (reaction.username===originalUsername){
+            //                 return true;
+            //             };
+            //             return false;
+            //         }).forEach(async (e)=>{
+            //             e.username=req.body.username;
+            //             await Thought.findOneAndUpdate(
+            //                 { _id: thought._id },
+            //                 { $addToSet: { reactions: e } },
+            //                 { new: true }
+            //             );
+            //         })
+            //         await Thought.findOneAndUpdate(
+            //             { _id: thought._id },
+            //             { $pull: { reactions: { username: originalUsername } } },
+            //             { new: true }
+            //         );
+                    
+            //     })
+            // };
             res.json(user);
         } catch(err) {
+            console.log(err);
             res.status(500).json(err);
         };
     },
@@ -60,14 +103,33 @@ module.exports = {
         try{
             const user = await User.findOneAndDelete({ _id: req.params.userId });
             if (!user){
-                return res.status()
+                return res.status(404).json({ message: 'User not found.' })
             }
             const deleteThoughts = await Thought.deleteMany({ _id: { $in: user.thoughts } });
-            const deleteReactions = await Thought.updateMany(
-                { reactions: { username: user.username } },
-                { $pull: { reactions: { username: username } } },
-                { new: true }
-            );
+            // const deleteReactions = await Thought.updateMany(
+            //     { reactions: { username: user.username } },
+            //     { $pull: { reactions: { username: user.username } } },
+            //     { new: true }
+            // );
+            const allThoughts = await Thought.find();
+            const userReactions = allThoughts.filter((thought)=>{
+                for (let i=0; i<thought.reactions.length; i++){
+                    if (thought.reactions[i].username===user.username){
+                        return true;
+                    };
+                    return false
+                }
+            })
+            .map((thought)=>thought._id);
+
+            userReactions.forEach(async(thought)=>{
+                await Thought.findOneAndUpdate(
+                    { _id: thought },
+                    { $pull: { reactions: { username: user.username } } },
+                    { new: true }
+                )
+            })
+            
             const users = await User.updateMany(
                 { _id: { $in: user.friends } },
                 { $pull: { friends: user._id } },
@@ -77,6 +139,7 @@ module.exports = {
             res.json({ message: 'User and associated thoughts, reactions, and friend list entries deleted.' })
 
         } catch(err){
+            console.log(err)
             res.status(500).json(err);
         }
     },
@@ -90,16 +153,22 @@ module.exports = {
 
             const user = await User.findOneAndUpdate(
                 { _id: req.params.userId },
-                { $addToSet: { friends: friend._id } },
+                { $addToSet: { friends: req.params.friendId } },
                 { new: true }
             );
 
             if (!user){
                 return res.status(404).json({ message: 'User not found.' });
             };
-
+            await User.findOneAndUpdate(
+                { _id: req.params.friendId },
+                { $addToSet: { friends: user._id } },
+                { new: true }
+                );
+            
             res.json(user);
         } catch(err){
+            console.log(err);
             res.status(500).json(err);
         }
     },
@@ -113,13 +182,19 @@ module.exports = {
 
             const user = await User.findOneAndUpdate(
                 { _id: req.params.userId },
-                { $pull: { friends: friend._id } },
+                { $pull: { friends: req.params.friendId } },
                 { new: true }
             );
 
             if (!user){
                 return res.status(404).json({ message: 'User not found.' });
             };
+
+            await User.findOneAndUpdate(
+                { _id: req.params.friendId },
+                { $pull: { friends: user._id } },
+                { new: true }
+            );
 
             res.json(user);
         } catch(err){

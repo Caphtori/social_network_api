@@ -1,6 +1,6 @@
 const { Schema, model } = require('mongoose');
-const { reactionSchema } = require('./Reaction.js');
-const { timeFormat } = require('../utils/formatTime.js');
+const reactionSchema = require('./Reaction.js');
+const formatTime = require('../utils/formatTime.js');
 
 const thoughtSchema = new Schema(
     {
@@ -17,20 +17,21 @@ const thoughtSchema = new Schema(
         createdAt: {
             type: Date,
             default: Date.now,
-            get: time => timeFormat(time)
+            get: time => formatTime(time)
         },
         reactions: [reactionSchema]
     },
     {
         toJSON: {
-            getters: true
+            getters: true,
+            virtuals: true
         },
         id: false
     }
 );
 
 thoughtSchema.virtual('reactionCount')
-.get(()=>{
+.get(function(){
     return this.reactions.length;
 });
 
